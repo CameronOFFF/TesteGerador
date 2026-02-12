@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { color: #e2e8f0; }
+.card { @apply rounded-2xl bg-slate-900/90 shadow-lg border border-slate-800 p-4; }

@@ -1,0 +1,1 @@
+{"canvas":{"w":1080,"h":1920,"bgColor":"#0b1020"},"layers":[{"type":"text","text":"{TITLE}","x":80,"y":150,"size":72},{"type":"eventList","bind":"{EVENTS}"},{"type":"logo","src":"{TENANT_LOGO}","x":760,"y":1600,"w":240,"h":240}]}
