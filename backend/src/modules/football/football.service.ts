@@ -170,9 +170,11 @@ export async function getMatchesByDay(group: MatchGroup, day: MatchDay): Promise
   if (competitions.length === 0) return [];
 
   const all: GameDTO[] = [];
+  // Busca UTC em janela de 2 dias para capturar jogos noturnos do Brasil (ex.: 21:30 BRT = 00:30 UTC do dia seguinte).
   try {
     for (const competition of competitions) {
-      const matches = await getCompetitionMatches(competition.competition_id, date, date);
+      const utcDateTo = addDays(date, 1);
+      const matches = await getCompetitionMatches(competition.competition_id, date, utcDateTo);
       const normalized = matches.map((m) => normalizeGame(group, competition.display_name, m));
       all.push(...normalized.filter((game) => isGameInBrtDate(game, date)));
     }
