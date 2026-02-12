@@ -96,3 +96,9 @@ cd frontend && npm install && npm run dev
 2. Reinicie backend após alterar `.env`.
 3. Use o usuário demo `admin@demo.com / admin123`.
 4. Em ambiente local, o backend aceita fallback configurável por `DEMO_ADMIN_EMAIL` e `DEMO_ADMIN_PASSWORD` para evitar travar no primeiro acesso.
+
+
+## Banner de Futebol (regra de logo + WhatsApp)
+- A logo do cliente é aplicada no canto superior direito e também na área central inferior (abaixo da imagem).
+- Se o contato informado for um número válido (10 a 13 dígitos), o banner mostra ícone WhatsApp + número.
+- Se for texto (ou vazio), o banner mostra apenas o texto sem ícone.
