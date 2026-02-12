@@ -41,6 +41,8 @@ GENERATED_DIR=generated
 FFMPEG_PATH=ffmpeg
 DEMO_ADMIN_EMAIL=admin@demo.com
 DEMO_ADMIN_PASSWORD=admin123
+FOOTBALL_DATA_TOKEN=
+FOOTBALL_DATA_BASE_URL=https://api.football-data.org/v4
 ```
 
 ### Frontend `.env`
@@ -52,11 +54,15 @@ VITE_API_URL=http://localhost:4000/api
 ```bash
 # XAMPP padrão (root sem senha)
 mysql -u root geradorpro < backend/migrations/001_init.sql
+mysql -u root geradorpro < backend/migrations/002_football_data.sql
 mysql -u root geradorpro < backend/seeds/001_demo.sql
+mysql -u root geradorpro < backend/seeds/002_football_data.sql
 
 # Se seu MySQL tiver senha
 # mysql -u root -p geradorpro < backend/migrations/001_init.sql
+# mysql -u root -p geradorpro < backend/migrations/002_football_data.sql
 # mysql -u root -p geradorpro < backend/seeds/001_demo.sql
+# mysql -u root -p geradorpro < backend/seeds/002_football_data.sql
 ```
 
 Usuário demo:
@@ -102,3 +108,15 @@ cd frontend && npm install && npm run dev
 - A logo do cliente é aplicada no canto superior direito e também na área central inferior (abaixo da imagem).
 - Se o contato informado for um número válido (10 a 13 dígitos), o banner mostra ícone WhatsApp + número.
 - Se for texto (ou vazio), o banner mostra apenas o texto sem ícone.
+
+
+## Camada de dados de futebol (football-data.org)
+- Provider exclusivo: `https://api.football-data.org/v4` com header `X-Auth-Token`.
+- Endpoints:
+  - `GET /api/football/today?group=BR|INT`
+  - `GET /api/football/tomorrow?group=BR|INT`
+  - `GET /api/football/live?group=BR|INT`
+- Saída: `{ games, guideText }` já normalizada para o painel.
+- Cache em MySQL (`football_matches_cache`) com fallback em 429 (rate limit).
+- Configuração de competições habilitadas por grupo em `football_competitions_config`.
+- Geração de banner de futebol usa os mesmos dados (group/day/filtro competição opcional).

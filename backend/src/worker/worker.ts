@@ -1,16 +1,32 @@
 import { query } from '../db/pool.js';
 import { renderVideo } from '../services/videoService.js';
+import { refreshCacheJobs } from '../modules/football/football.service.js';
+import { env } from '../config/env.js';
 
 let dbUnavailableLogged = false;
+let lastFootballRefreshAt = 0;
 
 function isDbConnectionError(error: any) {
   return ['ER_ACCESS_DENIED_ERROR', 'ECONNREFUSED', 'PROTOCOL_CONNECTION_LOST'].includes(error?.code);
+}
+
+async function maybeRefreshFootballCache() {
+  if (!env.footballDataToken) return;
+  const now = Date.now();
+  if (now - lastFootballRefreshAt < 15 * 60 * 1000) return;
+
+  await refreshCacheJobs();
+  lastFootballRefreshAt = now;
 }
 
 async function tick() {
   let job: any;
 
   try {
+    await maybeRefreshFootballCache().catch((err) => {
+      console.error('Worker: falha ao atualizar cache de futebol:', err.message || err);
+    });
+
     [job] = await query<any>('SELECT * FROM jobs WHERE status = "pending" ORDER BY id ASC LIMIT 1');
     if (dbUnavailableLogged) {
       console.log('Worker: conexão com MySQL restabelecida.');

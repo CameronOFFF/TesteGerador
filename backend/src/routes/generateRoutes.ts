@@ -4,7 +4,8 @@ import { requireActiveTenant, requireAuth } from '../middleware/auth.js';
 import { renderBanner, renderFootballBanner } from '../services/renderService.js';
 import { createJob } from '../services/jobService.js';
 import { query } from '../db/pool.js';
-import { getFootballEvents } from '../providers/footballProvider.js';
+import { getMatchesByDay } from '../modules/football/football.service.js';
+import { MatchGroup } from '../modules/football/types.js';
 
 const router = Router();
 const limiter = rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: true, legacyHeaders: false });
@@ -19,18 +20,25 @@ router.post('/banner/:category', async (req, res) => {
 
   if (category === 'football') {
     const day = req.body.day === 'tomorrow' ? 'tomorrow' : 'today';
-    const events = await getFootballEvents(day);
-    const title = req.body.title ?? (day === 'today' ? 'DE HOJE' : 'DE AMANHÃ');
+    const group: MatchGroup = req.body.group === 'INT' ? 'INT' : 'BR';
+    const competitionId = req.body.competitionId ? Number(req.body.competitionId) : undefined;
+
+    let games = await getMatchesByDay(group, day);
+    if (competitionId) {
+      games = games.filter((g) => g.competition.id === competitionId);
+    }
+
+    const title = req.body.title ?? (day === 'today' ? 'JOGOS DE HOJE' : 'JOGOS DE AMANHÃ');
     const output = await renderFootballBanner({
       outputName: `${category}-${Date.now()}`,
       title,
-      events,
+      games,
       logoPath: req.tenant.logo_url,
       contactText: req.body.contactText ?? req.body.shortText,
-      modelId: req.body.modelId
+      modelId: req.body.templateId ?? req.body.modelId
     });
 
-    return res.json({ resultUrl: output, message: `Banner de futebol gerado (${day})` });
+    return res.json({ resultUrl: output, message: `Banner de futebol gerado (${day}/${group})`, totalGames: games.length });
   }
 
   const title = req.body.title ?? `Banner ${category.toUpperCase()}`;

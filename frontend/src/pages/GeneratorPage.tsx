@@ -5,6 +5,8 @@ import { TemplateGallery } from '../components/TemplateGallery';
 export function GeneratorPage({ title, category, models }: { title: string; category: string; models: string[] }) {
   const [model, setModel] = useState(models[0]);
   const [day, setDay] = useState<'today' | 'tomorrow'>('today');
+  const [group, setGroup] = useState<'BR' | 'INT'>('BR');
+  const [competitionId, setCompetitionId] = useState('');
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
@@ -16,8 +18,11 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
       if (category === 'football') {
         payload.title = day === 'today' ? 'DE HOJE' : 'DE AMANHÃ';
         payload.day = day;
+        payload.group = group;
         payload.modelId = model;
         payload.contactText = text;
+        payload.templateId = model;
+        if (competitionId.trim()) payload.competitionId = Number(competitionId);
       }
 
       const { data } = await api.post(`/generate/banner/${category}`, payload);
@@ -41,6 +46,27 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
               Jogos de Amanhã
             </button>
           </div>
+        )}
+
+
+        {category === 'football' && (
+          <div className="flex gap-2">
+            <button className={`px-3 py-2 rounded ${group === 'BR' ? 'bg-indigo-600' : 'bg-slate-700'}`} onClick={() => setGroup('BR')}>
+              BR (Nacional)
+            </button>
+            <button className={`px-3 py-2 rounded ${group === 'INT' ? 'bg-indigo-600' : 'bg-slate-700'}`} onClick={() => setGroup('INT')}>
+              INT (Internacional)
+            </button>
+          </div>
+        )}
+
+        {category === 'football' && (
+          <input
+            className="w-full bg-slate-800 p-2 rounded"
+            placeholder="ID da competição (opcional)"
+            value={competitionId}
+            onChange={(e) => setCompetitionId(e.target.value)}
+          />
         )}
 
         <input

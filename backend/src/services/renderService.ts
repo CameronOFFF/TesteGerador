@@ -3,7 +3,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import { env } from '../config/env.js';
-import { ProviderEvent } from '../types/index.js';
+import { GameDTO } from '../modules/football/types.js';
 
 function sanitizeText(input: string | undefined, max = 48) {
   return (input ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -67,7 +67,7 @@ export async function renderBanner(outputName: string, title: string, subtitle: 
 export async function renderFootballBanner(params: {
   outputName: string;
   title: string;
-  events: ProviderEvent[];
+  games: GameDTO[];
   logoPath?: string;
   contactText?: string;
   modelId?: string;
@@ -107,12 +107,14 @@ export async function renderFootballBanner(params: {
   ctx.fillText('ÁREA DA IMAGEM', 650, 850);
 
   // event list
-  const events = params.events.slice(0, 7);
+  const games = params.games.slice(0, 7);
   let y = 340;
-  for (const event of events) {
-    const lineLeague = sanitizeText(event.league, 26);
-    const lineMatch = `${sanitizeText(event.home, 14)} x ${sanitizeText(event.away, 14)}`;
-    const lineTime = `${event.startTime}  •  ${sanitizeText(event.whereToWatch?.[0] ?? 'Canal oficial', 18)}`;
+  for (const game of games) {
+    const lineLeague = sanitizeText(game.competition.name, 26);
+    const lineMatch = `${sanitizeText(game.home.name, 14)} x ${sanitizeText(game.away.name, 14)}`;
+    const hhmm = game.kickoffBRT.split(' ')[1] ?? '--:--';
+    const maybeScore = game.status === 'LIVE' || game.status === 'FINISHED' ? ` ${game.score?.home ?? '-'}-${game.score?.away ?? '-'}` : '';
+    const lineTime = `${hhmm}${maybeScore}`;
 
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
     ctx.fillRect(70, y, 520, 56);

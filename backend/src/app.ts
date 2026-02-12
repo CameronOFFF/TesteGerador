@@ -5,6 +5,7 @@ import tenantRoutes from './routes/tenantRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import generateRoutes from './routes/generateRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
+import footballRoutes from './routes/footballRoutes.js';
 import { query } from './db/pool.js';
 
 const app = express();
@@ -25,6 +26,7 @@ app.get('/api/analytics/top-searches', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/football', footballRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/jobs', jobRoutes);
 

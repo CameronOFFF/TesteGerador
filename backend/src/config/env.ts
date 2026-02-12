@@ -29,6 +29,8 @@ export const env = {
   uploadsDir: process.env.UPLOADS_DIR ?? 'uploads',
   generatedDir: process.env.GENERATED_DIR ?? 'generated',
   ffmpegPath: process.env.FFMPEG_PATH ?? 'ffmpeg',
+  footballDataToken: process.env.FOOTBALL_DATA_TOKEN,
+  footballDataBaseUrl: process.env.FOOTBALL_DATA_BASE_URL ?? 'https://api.football-data.org/v4',
   demoAdminEmail: process.env.DEMO_ADMIN_EMAIL ?? 'admin@demo.com',
   demoAdminPassword: process.env.DEMO_ADMIN_PASSWORD ?? 'admin123',
 };
