@@ -67,6 +67,8 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
         )}
 
         <input
+          id="generator-contact"
+          name="generator-contact"
           className="w-full bg-slate-800 p-2 rounded"
           placeholder={category === 'football' ? 'WhatsApp (número) ou texto opcional' : 'WhatsApp ou texto'}
           value={text}

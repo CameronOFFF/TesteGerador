@@ -5,10 +5,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Fallback para cenários locais em que o usuário editou apenas .env.example.
-if (!process.env.FOOTBALL_DATA_TOKEN) {
+const tokenMissing = !process.env.FOOTBALL_DATA_TOKEN || process.env.FOOTBALL_DATA_TOKEN.trim() === '';
+if (tokenMissing) {
   const examplePath = path.resolve(process.cwd(), '.env.example');
   if (fs.existsSync(examplePath)) {
-    dotenv.config({ path: examplePath });
+    const parsed = dotenv.parse(fs.readFileSync(examplePath));
+    if (parsed.FOOTBALL_DATA_TOKEN && parsed.FOOTBALL_DATA_TOKEN.trim() !== '') {
+      process.env.FOOTBALL_DATA_TOKEN = parsed.FOOTBALL_DATA_TOKEN;
+    }
+    if ((!process.env.FOOTBALL_DATA_BASE_URL || process.env.FOOTBALL_DATA_BASE_URL.trim() === '') && parsed.FOOTBALL_DATA_BASE_URL) {
+      process.env.FOOTBALL_DATA_BASE_URL = parsed.FOOTBALL_DATA_BASE_URL;
+    }
   }
 }
 

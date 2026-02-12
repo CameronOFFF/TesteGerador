@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('admin@demo.com');
@@ -8,6 +9,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+  const { refresh } = useAuth();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -17,10 +19,11 @@ export function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       localStorage.setItem('accessToken', data.accessToken);
+      if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
 
-      const me = await api.get('/auth/me');
-      const hasLogo = Boolean(me?.data?.tenant?.logo_url);
-      nav(hasLogo ? '/dashboard' : '/config/logo');
+      const session = await refresh();
+      const hasLogo = Boolean(session?.tenant?.logo_url);
+      nav(hasLogo ? '/dashboard' : '/config/logo', { replace: true });
     } catch (err: any) {
       if (err?.code === 'ERR_NETWORK') {
         setError('Servidor backend indisponível. Inicie o backend em http://localhost:4000.');
@@ -37,8 +40,18 @@ export function LoginPage() {
     <div className="min-h-screen grid place-items-center bg-slate-950">
       <form onSubmit={submit} className="card w-80 space-y-3">
         <h1 className="text-xl">Entrar</h1>
-        <input className="w-full bg-slate-800 p-2 rounded" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input
+          id="email"
+          name="email"
+          autoComplete="email"
+          className="w-full bg-slate-800 p-2 rounded"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          id="password"
+          name="password"
+          autoComplete="current-password"
           type="password"
           className="w-full bg-slate-800 p-2 rounded"
           value={password}
