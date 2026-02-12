@@ -21,6 +21,7 @@ Projeto full-stack com painel dark para geração de banners, vídeos e guias es
 
 ## Configuração
 ### Backend `.env`
+> Use preferencialmente `backend/.env`. Se não existir, o backend tenta ler `backend/.env.example` como fallback local.
 ```env
 PORT=4000
 # Opção 1 (XAMPP padrão)
@@ -126,3 +127,8 @@ cd frontend && npm install && npm run dev
 - Esse erro significa que o backend não está ativo em `http://localhost:4000`.
 - Inicie primeiro o backend (`cd backend && npm run dev`) e depois o frontend.
 - Se a porta 4000 estiver ocupada, ajuste `PORT` no `.env` e também `VITE_API_URL` no frontend.
+
+
+## Primeiro login sem logo
+- Se o tenant ainda não possui `logo_url`, o usuário é direcionado automaticamente para `/config/logo` no primeiro acesso.
+- Após enviar a logo, os próximos logins seguem direto para o dashboard.

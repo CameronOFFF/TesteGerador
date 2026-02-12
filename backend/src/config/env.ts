@@ -1,6 +1,16 @@
+import fs from 'fs';
+import path from 'path';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// Fallback para cenários locais em que o usuário editou apenas .env.example.
+if (!process.env.FOOTBALL_DATA_TOKEN) {
+  const examplePath = path.resolve(process.cwd(), '.env.example');
+  if (fs.existsSync(examplePath)) {
+    dotenv.config({ path: examplePath });
+  }
+}
 
 function normalizeEmpty(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
@@ -32,5 +42,5 @@ export const env = {
   footballDataToken: process.env.FOOTBALL_DATA_TOKEN,
   footballDataBaseUrl: process.env.FOOTBALL_DATA_BASE_URL ?? 'https://api.football-data.org/v4',
   demoAdminEmail: process.env.DEMO_ADMIN_EMAIL ?? 'admin@demo.com',
-  demoAdminPassword: process.env.DEMO_ADMIN_PASSWORD ?? 'admin123',
+  demoAdminPassword: process.env.DEMO_ADMIN_PASSWORD ?? 'admin123'
 };

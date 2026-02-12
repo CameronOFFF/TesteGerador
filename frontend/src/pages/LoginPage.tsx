@@ -17,7 +17,10 @@ export function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       localStorage.setItem('accessToken', data.accessToken);
-      nav('/dashboard');
+
+      const me = await api.get('/auth/me');
+      const hasLogo = Boolean(me?.data?.tenant?.logo_url);
+      nav(hasLogo ? '/dashboard' : '/config/logo');
     } catch (err: any) {
       if (err?.code === 'ERR_NETWORK') {
         setError('Servidor backend indisponível. Inicie o backend em http://localhost:4000.');
