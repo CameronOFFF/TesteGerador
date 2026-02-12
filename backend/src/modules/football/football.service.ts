@@ -9,29 +9,43 @@ type CompetitionConfig = {
   display_name?: string | null;
 };
 
-function toYmd(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+const BRT_TZ = 'America/Sao_Paulo';
 
-function dayToDate(day: MatchDay) {
-  const now = new Date();
-  if (day === 'today') return toYmd(now);
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return toYmd(tomorrow);
-}
-
-function toBrt(utcDate: string) {
-  const dt = new Date(utcDate);
-  return new Intl.DateTimeFormat('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
+function formatBrtParts(date: Date) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BRT_TZ,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
-  }).format(dt);
+  });
+
+  const parts = formatter.formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  const year = get('year');
+  const month = get('month');
+  const day = get('day');
+  const hour = get('hour');
+  const minute = get('minute');
+
+  return {
+    ymd: `${year}-${month}-${day}`,
+    hhmm: `${hour}:${minute}`,
+    full: `${year}-${month}-${day} ${hour}:${minute}`
+  };
+}
+
+function addDays(ymd: string, days: number) {
+  const base = new Date(`${ymd}T12:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+function dayToDate(day: MatchDay) {
+  const todayBrt = formatBrtParts(new Date()).ymd;
+  return day === 'today' ? todayBrt : addDays(todayBrt, 1);
 }
 
 function normalizeStatus(raw: string): GameDTO['status'] {
@@ -43,6 +57,8 @@ function normalizeStatus(raw: string): GameDTO['status'] {
 }
 
 function normalizeGame(group: MatchGroup, displayName: string | null | undefined, match: any): GameDTO {
+  const brt = formatBrtParts(new Date(match.utcDate));
+
   return {
     id: match.id,
     group,
@@ -54,7 +70,7 @@ function normalizeGame(group: MatchGroup, displayName: string | null | undefined
     },
     status: normalizeStatus(match.status),
     kickoffUTC: match.utcDate,
-    kickoffBRT: toBrt(match.utcDate),
+    kickoffBRT: brt.full,
     home: {
       id: match.homeTeam?.id ?? 0,
       name: match.homeTeam?.name ?? 'Time da casa',
@@ -72,6 +88,10 @@ function normalizeGame(group: MatchGroup, displayName: string | null | undefined
   };
 }
 
+function isGameInBrtDate(game: GameDTO, expectedYmd: string) {
+  return formatBrtParts(new Date(game.kickoffUTC)).ymd === expectedYmd;
+}
+
 async function getEnabledCompetitions(group: MatchGroup) {
   const rows = await query<CompetitionConfig>(
     'SELECT competition_id, `group`, enabled, display_name FROM football_competitions_config WHERE enabled = 1 AND `group` = ?',
@@ -85,7 +105,15 @@ async function getCache(group: MatchGroup, date: string): Promise<GameDTO[] | nu
     'SELECT payload_json FROM football_matches_cache WHERE `group` = ? AND `date` = ? AND expires_at > NOW()',
     [group, date]
   );
-  return row ? (JSON.parse(row.payload_json) as GameDTO[]) : null;
+  if (!row) return null;
+
+  const games = JSON.parse(row.payload_json) as GameDTO[];
+  // proteção contra cache antigo calculado em UTC incorreto
+  if (games.some((game) => !isGameInBrtDate(game, date))) {
+    return null;
+  }
+
+  return games;
 }
 
 async function getStaleCache(group: MatchGroup, date: string): Promise<GameDTO[] | null> {
@@ -93,7 +121,10 @@ async function getStaleCache(group: MatchGroup, date: string): Promise<GameDTO[]
     group,
     date
   ]);
-  return row ? (JSON.parse(row.payload_json) as GameDTO[]) : null;
+  if (!row) return null;
+
+  const games = JSON.parse(row.payload_json) as GameDTO[];
+  return games.filter((game) => isGameInBrtDate(game, date));
 }
 
 async function saveCache(group: MatchGroup, date: string, games: GameDTO[], day: MatchDay) {
@@ -104,8 +135,8 @@ async function saveCache(group: MatchGroup, date: string, games: GameDTO[], day:
   );
 }
 
-function sortByKickoffBrt(games: GameDTO[]) {
-  return games.sort((a, b) => a.kickoffBRT.localeCompare(b.kickoffBRT));
+function sortByKickoff(games: GameDTO[]) {
+  return games.sort((a, b) => new Date(a.kickoffUTC).getTime() - new Date(b.kickoffUTC).getTime());
 }
 
 export function buildGuideText(games: GameDTO[]) {
@@ -118,9 +149,9 @@ export function buildGuideText(games: GameDTO[]) {
 
   const blocks: string[] = [];
   for (const [competition, items] of byCompetition) {
-    const sorted = [...items].sort((a, b) => a.kickoffBRT.localeCompare(b.kickoffBRT));
+    const sorted = [...items].sort((a, b) => new Date(a.kickoffUTC).getTime() - new Date(b.kickoffUTC).getTime());
     const lines = sorted.map((game) => {
-      const hhmm = game.kickoffBRT.split(' ')[1] ?? '--:--';
+      const hhmm = formatBrtParts(new Date(game.kickoffUTC)).hhmm;
       return `🕒 ${hhmm} (BRT)\n⚽ ${game.home.name} x ${game.away.name}\n📌 ${game.status}`;
     });
     blocks.push(`🏆 ${competition}\n${lines.join('\n\n')}`);
@@ -133,7 +164,7 @@ export async function getMatchesByDay(group: MatchGroup, day: MatchDay): Promise
   const date = dayToDate(day);
 
   const cached = await getCache(group, date);
-  if (cached) return sortByKickoffBrt(cached);
+  if (cached) return sortByKickoff(cached);
 
   const competitions = await getEnabledCompetitions(group);
   if (competitions.length === 0) return [];
@@ -143,16 +174,16 @@ export async function getMatchesByDay(group: MatchGroup, day: MatchDay): Promise
     for (const competition of competitions) {
       const matches = await getCompetitionMatches(competition.competition_id, date, date);
       const normalized = matches.map((m) => normalizeGame(group, competition.display_name, m));
-      all.push(...normalized);
+      all.push(...normalized.filter((game) => isGameInBrtDate(game, date)));
     }
 
-    const sorted = sortByKickoffBrt(all);
+    const sorted = sortByKickoff(all);
     await saveCache(group, date, sorted, day);
     return sorted;
   } catch (err: any) {
     if (err?.code === 429) {
       const stale = await getStaleCache(group, date);
-      if (stale) return sortByKickoffBrt(stale);
+      if (stale && stale.length) return sortByKickoff(stale);
     }
     throw err;
   }
