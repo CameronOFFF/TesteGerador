@@ -39,6 +39,8 @@ JWT_REFRESH_DAYS=30
 UPLOADS_DIR=uploads
 GENERATED_DIR=generated
 FFMPEG_PATH=ffmpeg
+DEMO_ADMIN_EMAIL=admin@demo.com
+DEMO_ADMIN_PASSWORD=admin123
 ```
 
 ### Frontend `.env`
@@ -87,3 +89,10 @@ cd frontend && npm install && npm run dev
 2. Para XAMPP padrão, use `MYSQL_USER=root` e `MYSQL_PASSWORD=` (vazio).
 3. Reinicie backend e worker após alterar `.env`.
 4. Se ainda falhar, teste manualmente: `mysql -u root -h 127.0.0.1 -P 3306`.
+
+
+## Se o login retornar 401
+1. Confirme se aplicou as seeds em `backend/seeds/001_demo.sql`.
+2. Reinicie backend após alterar `.env`.
+3. Use o usuário demo `admin@demo.com / admin123`.
+4. Em ambiente local, o backend aceita fallback configurável por `DEMO_ADMIN_EMAIL` e `DEMO_ADMIN_PASSWORD` para evitar travar no primeiro acesso.
