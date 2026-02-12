@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+type JwtExpires = jwt.SignOptions['expiresIn'];
 import { env } from '../config/env.js';
 import { query } from '../db/pool.js';
 
@@ -23,7 +24,7 @@ export async function login(email: string, password: string) {
   }
 
   const accessToken = jwt.sign({ userId: user.id, tenantId: user.tenant_id, role: user.role }, env.jwtSecret, {
-    expiresIn: env.accessTtl
+    expiresIn: env.accessTtl as JwtExpires
   });
 
   const refreshToken = jwt.sign({ userId: user.id, tenantId: user.tenant_id, role: user.role }, env.jwtRefreshSecret, {

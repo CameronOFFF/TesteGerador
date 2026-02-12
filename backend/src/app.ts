@@ -30,4 +30,9 @@ app.use('/api/football', footballRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/jobs', jobRoutes);
 
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('API error:', err?.message || err);
+  res.status(500).json({ message: 'Erro interno do servidor' });
+});
+
 export default app;

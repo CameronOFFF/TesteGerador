@@ -6,29 +6,36 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
   const [model, setModel] = useState(models[0]);
   const [day, setDay] = useState<'today' | 'tomorrow'>('today');
   const [group, setGroup] = useState<'BR' | 'INT'>('BR');
-  const [competitionId, setCompetitionId] = useState('');
   const [text, setText] = useState('');
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function gen() {
     setError('');
+    setLoading(true);
     try {
       const payload: any = { title: `${title} ${model}`, shortText: text };
       if (category === 'football') {
-        payload.title = day === 'today' ? 'DE HOJE' : 'DE AMANHÃ';
+        payload.title = day === 'today' ? 'JOGOS DE HOJE' : 'JOGOS DE AMANHÃ';
         payload.day = day;
         payload.group = group;
         payload.modelId = model;
         payload.contactText = text;
         payload.templateId = model;
-        if (competitionId.trim()) payload.competitionId = Number(competitionId);
       }
 
       const { data } = await api.post(`/generate/banner/${category}`, payload);
       setResult(data.resultUrl);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Falha ao gerar banner');
+      const msg = err?.response?.data?.message;
+      if (err?.code === 'ERR_NETWORK') {
+        setError('Servidor backend indisponível. Verifique se o backend está rodando na porta 4000.');
+      } else {
+        setError(msg ?? 'Falha ao gerar banner');
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -48,25 +55,15 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
           </div>
         )}
 
-
         {category === 'football' && (
           <div className="flex gap-2">
             <button className={`px-3 py-2 rounded ${group === 'BR' ? 'bg-indigo-600' : 'bg-slate-700'}`} onClick={() => setGroup('BR')}>
-              BR (Nacional)
+              Nacional (BR)
             </button>
             <button className={`px-3 py-2 rounded ${group === 'INT' ? 'bg-indigo-600' : 'bg-slate-700'}`} onClick={() => setGroup('INT')}>
-              INT (Internacional)
+              Internacional (INT)
             </button>
           </div>
-        )}
-
-        {category === 'football' && (
-          <input
-            className="w-full bg-slate-800 p-2 rounded"
-            placeholder="ID da competição (opcional)"
-            value={competitionId}
-            onChange={(e) => setCompetitionId(e.target.value)}
-          />
         )}
 
         <input
@@ -78,12 +75,14 @@ export function GeneratorPage({ title, category, models }: { title: string; cate
 
         {category === 'football' && (
           <p className="text-xs text-slate-400">
-            Regra: ícone do WhatsApp aparece apenas quando for número válido (10 a 13 dígitos). Para texto, mostra sem ícone.
+            O cliente seleciona apenas: Hoje/Amanhã e Nacional/Internacional. Ícone WhatsApp aparece só para número válido.
           </p>
         )}
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
-        <button className="bg-indigo-600 px-3 py-2 rounded" onClick={gen}>Gerar</button>
+        <button disabled={loading} className="bg-indigo-600 px-3 py-2 rounded disabled:opacity-60" onClick={gen}>
+          {loading ? 'Gerando...' : 'Gerar'}
+        </button>
         {result && <p className="mt-2 text-green-400">Gerado: {result}</p>}
       </div>
     </div>

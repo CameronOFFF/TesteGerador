@@ -19,8 +19,12 @@ export function LoginPage() {
       localStorage.setItem('accessToken', data.accessToken);
       nav('/dashboard');
     } catch (err: any) {
-      const message = err?.response?.data?.message ?? 'Falha no login. Verifique email e senha.';
-      setError(message);
+      if (err?.code === 'ERR_NETWORK') {
+        setError('Servidor backend indisponível. Inicie o backend em http://localhost:4000.');
+      } else {
+        const message = err?.response?.data?.message ?? 'Falha no login. Verifique email e senha.';
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }

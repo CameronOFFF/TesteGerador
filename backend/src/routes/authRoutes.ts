@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
+type JwtExpires = jwt.SignOptions['expiresIn'];
 import { z } from 'zod';
 import { login } from '../services/authService.js';
 import { env } from '../config/env.js';
@@ -23,7 +24,7 @@ router.post('/refresh', async (req, res) => {
   if (!stored) return res.status(401).json({ message: 'Refresh inválido' });
   const payload = jwt.verify(token, env.jwtRefreshSecret) as any;
   const accessToken = jwt.sign({ userId: payload.userId, tenantId: payload.tenantId, role: payload.role }, env.jwtSecret, {
-    expiresIn: env.accessTtl
+    expiresIn: env.accessTtl as JwtExpires
   });
   res.json({ accessToken });
 });

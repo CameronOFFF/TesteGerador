@@ -119,4 +119,10 @@ cd frontend && npm install && npm run dev
 - Saída: `{ games, guideText }` já normalizada para o painel.
 - Cache em MySQL (`football_matches_cache`) com fallback em 429 (rate limit).
 - Configuração de competições habilitadas por grupo em `football_competitions_config`.
-- Geração de banner de futebol usa os mesmos dados (group/day/filtro competição opcional).
+- Geração de banner de futebol usa os mesmos dados (group/day), sem exigir ID de competição no painel do cliente.
+
+
+## Diagnóstico rápido: ERR_CONNECTION_REFUSED no login
+- Esse erro significa que o backend não está ativo em `http://localhost:4000`.
+- Inicie primeiro o backend (`cd backend && npm run dev`) e depois o frontend.
+- Se a porta 4000 estiver ocupada, ajuste `PORT` no `.env` e também `VITE_API_URL` no frontend.
